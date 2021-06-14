@@ -1,0 +1,53 @@
+version: "3.3"
+services:
+  postgres_register:
+    container_name: postgres_register
+    image: postgres:12.2
+    environment: 
+      POSTGRES_USER: register
+      POSTGRES_PASSWORD: s3cr3t
+    ports:
+      - 5432:5432
+  # mongo:
+  #   container_name: mongo
+  #   hostname: mongo
+  #   image: mongo
+  #   restart: always    
+  #   ports:
+  #     - 27017:27017
+  #   environment:
+  #     - MONGO_INITDB_DATABASE=register
+  #   volumes:
+  #     - ./mongo_data:/data/db
+  # mongo-express:
+  #   image: mongo-express    
+  #   ports:
+  #     - 8180:8081
+  #   depends_on:
+  #     - mongo   
+  # zookeeper:
+  #   container_name: zookeper
+  #   image: debezium/zookeeper
+  #   ports:
+  #     - 2181:2181
+  #     - 2888:2888
+  #     - 3888:3888
+  # kafka:
+  #   container_name: kafka
+  #   image: debezium/kafka
+  #   ports:
+  #     - 9092:9092
+  #   links:
+  #     - zookeeper
+  #   environment:
+  #     - ZOOKEEPER_CONNECT=zookeeper:2181
+  # kafkadrop:
+  #   container_name: kafkadrop
+  #   image: obsidiandynamics/kafdrop
+  #   environment:
+  #     KAFKA_BROKERCONNECT: kafka:9092
+  #   ports:
+  #     - 9000:9000
+  #   depends_on:
+  #     - kafka
+     
