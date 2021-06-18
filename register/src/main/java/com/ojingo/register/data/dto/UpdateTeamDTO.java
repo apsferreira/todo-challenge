@@ -1,6 +1,5 @@
 package com.ojingo.register.data.dto;
 
-public class ToDoListDTO {
-	public String toDoListId;
+public class UpdateTeamDTO {
 	public String name;
 }

@@ -24,50 +24,33 @@ public class TeamService {
 		return teamRepository.findById(id);
 	}
 	
+	public Optional<Team> findByIdOptional(Long id) {
+		return teamRepository.findByIdOptional(id);
+	}
+
 	public List<Team> listByName(String name) {		
 		return teamRepository.list("name", name);
 	}
 	
-	public Optional<Team> findByIdOptional(Long id) {
-		return teamRepository.findByIdOptional(id);
-	}
-	
-	public Team create(Team dto) throws Exception { 
-		if(this.listByName(dto.name).size() > 0) {
+	public Team create(Team team) throws Exception { 
+		if(this.listByName(team.name).size() > 0) {
 			throw new IllegalArgumentException("The value is already in the list.");
-		}
-		
-		Team team = new Team();
-		
-		team.name = dto.name;		
+		}		
 		
 		teamRepository.persist(team);	
 		
 		return team;		
 	}  
 	
-	public Team update(Long id, Team dto) {	
-		Optional<Team> teamOptional = this.findByIdOptional(id);
+	public Team update(Team teamToUpdate, Team team) {
+		teamToUpdate.name = team.name; 
 		
-		if (teamOptional.isEmpty()) {
-			throw new NotFoundException();
-		}
+		teamRepository.persist(teamToUpdate);
 		
-		Team team = teamOptional.get();
-		
-		team.name = dto.name; 
-		
-		teamRepository.persist(team);
-		
-		return team;
+		return teamToUpdate;
 	}
 	
-	public void delete(Long id) {
-		Optional<Team> teamOptional = this.findByIdOptional(id);
-		
-		teamOptional.ifPresentOrElse(Team::delete, () -> {
-			throw new NotFoundException();
-		});
+	public void delete(Team team) {
+		teamRepository.delete(team);
 	}
-
 }

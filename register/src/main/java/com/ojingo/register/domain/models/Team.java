@@ -27,5 +27,12 @@ public class Team extends PanacheEntityBase {
 	
 	@Transient
 	public List<Todo> todos;
+	
+	public Team() {		
+	}
+	
+	public Team(String name) {
+		this.name = name;
+	}
 
 }

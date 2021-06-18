@@ -33,75 +33,54 @@ public class TodoService {
 	public Optional<Todo> findByIdOptional(Long id) {
 		return todoRepository.findByIdOptional(id);
 	}
-
-	public Todo findByTeamAndId(Team team, Long id) {
-		return todoRepository.find("team = ?1 and id = ?2", team, id).firstResult();
-	}	
+	
+	public Todo findByIdTeamAndId(Long idTeam, Long id) {
+		return todoRepository.find("team.id = ?1 and id = ?2", idTeam, id).firstResult();
+	}
 	
 	public Todo findByUser(User dto) {		
 		return todoRepository.find("user", dto).firstResult();
 	}
 	
-	public Todo create(Todo todoDTO) throws Exception {		
-		Todo todo = new Todo();
-		
-		todo.description = todoDTO.description;
-		todo.user = todoDTO.user;
-		todo.team = todoDTO.team;;
-
-		todoRepository.persist(todo);	
-		
-		return todo;
-	}
-	
-	public Todo createFromTeam(Team teamDTO, Todo todoDTO) throws Exception {
-		Todo todo = new Todo();
-		
-		todo.description = todoDTO.description;
-		todo.team = teamDTO;
+	public Todo create(Todo todo) throws Exception {		
 		
 		todoRepository.persist(todo);	
 		
 		return todo;
 	}
 	
-	public Todo createFromUser(User userDTO) throws Exception { 
-		if(this.findByUser(userDTO) != null) {
+	public Todo createFromTeam(Team team, Todo todo) throws Exception {
+		todo.team = team;
+		
+		todoRepository.persist(todo);	
+		
+		return todo;
+	}
+	
+	public Todo createFromUser(User user) throws Exception { 
+		if(this.findByUser(user) != null) {
 			throw new Exception("Todo already exists");
 		}
 		
-		Todo todo = new Todo();
+		Todo newTodo = new Todo();
 		
-		todo.description = "List of " + userDTO.name;
-		todo.user = userDTO;
+		newTodo.description = "To Do List of " + user.name;
+		newTodo.user = user;
 		
-		todoRepository.persist(todo);	
+		todoRepository.persist(newTodo);	
 		
-		return todo;
+		return newTodo;
 	}
 	
-	public Todo update(Long id, Todo dto) {	
-		Optional<Todo> todoOptional = this.findByIdOptional(id);
+	public Todo update(Todo todoToUpdate, Todo todo) {
+		todoToUpdate.description = todo.description; 
 		
-		if (todoOptional.isEmpty()) {
-			throw new NotFoundException();
-		}
+		todoRepository.persist(todoToUpdate);
 		
-		Todo todo = todoOptional.get();
-		
-		todo.description = dto.description; 
-		
-		todo.persist();
-		
-		return todo;
+		return todoToUpdate;
 	}
 	
-	public void delete(Long id) {
-		Optional<Todo> todoOptional = this.findByIdOptional(id);
-		
-		todoOptional.ifPresentOrElse(Todo::delete, () -> {
-			throw new NotFoundException();
-		});
+	public void delete(Todo todo) {
+		todoRepository.delete(todo);
 	}
-
 }

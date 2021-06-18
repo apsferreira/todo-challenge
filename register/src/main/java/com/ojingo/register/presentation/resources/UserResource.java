@@ -1,9 +1,12 @@
  package com.ojingo.register.presentation.resources;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
+import javax.validation.Valid;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -15,15 +18,18 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
+import com.ojingo.register.data.dto.CreateUserDTO;
+import com.ojingo.register.data.dto.UpdateUserDTO;
+import com.ojingo.register.data.dto.UserDTO;
+import com.ojingo.register.data.dto.UserMapper;
 import com.ojingo.register.domain.models.User;
-import com.ojingo.register.presentation.service.TodoService;
 import com.ojingo.register.presentation.service.UserService;
 
 @Path("/users")
+@Tag(name = "Users")	
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class UserResource {
@@ -32,62 +38,72 @@ public class UserResource {
 	UserService userService;
 	
 	@Inject 
-	TodoService todoService;
+	UserMapper userMapper;
 
 	@GET
-	@Tag(name = "Users")	
 	public Response getAll() {		
-		return Response.ok(userService.listAll()).build();
+		List<UserDTO> results = new ArrayList<>();
+		
+		userService.listAll().forEach(u -> results.add(userMapper.convertToUserDTO(u)));		
+		
+		return Response.ok(results).build();
 	}
 		
 	@GET
 	@Path("{idUser}")
-	@Tag(name = "Users")	
-	public Response getAUser(@PathParam("idUser") Long idUser) {
+	public Response getUser(@PathParam("idUser") Long idUser) {
 		Optional<User> userOptional = userService.findByIdOptional(idUser);
 
 		if (userOptional.isEmpty()) {
 			throw new NotFoundException();
 		}
 		
-		return Response.ok(userOptional.get()).build();		
+		return Response.ok(userMapper.convertToUserDTO(userOptional.get())).build();		
 	}
 	
 	@POST	
 	@Transactional
-	@Tag(name = "Users")
-	public Response create(@PathParam("idTeam") Long idTeam, User dto) throws Exception {	
-		User user = userService.create(dto);
-		
-		if (user.isPersistent() && todoService.createFromUser(user).isPersistent()) {			
-			return Response.ok(user).build();			
-		} else {
-			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+	public Response create(@Valid CreateUserDTO createUserDTO) throws Exception {	
+		try {	
+			if(createUserDTO != null) {
+				return Response.ok(userMapper.convertToUserDTO(
+						userService.create(userMapper.convertToUser(createUserDTO)))
+				).build();
+			} else {
+				return Response.status(400).build();
+			}
+			
+		} catch (IllegalArgumentException e) {
+			return Response.status(422).build();
+		} catch (Exception e) {
+			return Response.status(409).build();
 		}
 	}
 	
 	@PUT
 	@Path("{idUser}")
 	@Transactional
-	@Tag(name = "Users")
-	public Response update(@PathParam("idUser") Long idUser, User dto) {		
-		Optional<User> userOptional = userService.findByIdOptional(idUser);
-		
-		if (userOptional.isEmpty()) {
-			throw new NotFoundException();
-		}
-		
-		if (userService.update(idUser, dto).isPersistent()) {			
-			return Response.ok("User has been successfully changed").build();
+	public Response update(@PathParam("idUser") Long idUser, UpdateUserDTO updateUserDTO) {				
+		if(idUser != null && updateUserDTO != null) {
+			Optional<User> userOptional = userService.findByIdOptional(idUser);
+			
+			if (userOptional.isEmpty()) {
+				throw new NotFoundException();
+			}
+			
+			if (userService.update(userOptional.get(), userMapper.convertToUser(updateUserDTO)).isPersistent()) {			
+				return Response.ok("Team has been successfully changed").build();
+			} else {
+				return Response.status(409).build();
+			}
 		} else {
-			return Response.notModified("Error when changing the user: " + idUser).build();
+			return Response.status(400).build();
 		}
 	}
 
 	@DELETE
 	@Path("{idUser}")
 	@Transactional
-	@Tag(name = "Users")
 	public Response delete(@PathParam("idUser") Long idUser) {
 		Optional<User> userOptional = userService.findByIdOptional(idUser);
 		
@@ -95,7 +111,7 @@ public class UserResource {
 			throw new NotFoundException();
 		}
 
-		userService.delete(idUser);
-		return Response.ok("User was deleted sucessfully").build();		
+		userService.delete(userOptional.get());
+		return Response.ok(204).build();	
 	}
 }

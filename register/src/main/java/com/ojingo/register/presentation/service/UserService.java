@@ -25,60 +25,42 @@ public class UserService {
 		return userRepository.findById(id);
 	}
 		
-	public User findByTeamAndId(Team team, Long id) {
-		return userRepository.find("team = ?1 and id = ?2", team, id).firstResult();
-	}
-	
-	public User findByName(User dto) {		
-		return User.find("name", dto.name).firstResult();
-	}
-	
-	public List<User> listByTeam(Team teamDTO) {		
-		return User.list("team", teamDTO);
-	}
-	
 	public Optional<User> findByIdOptional(Long id) {
 		return userRepository.findByIdOptional(id);
 	}
 	
-	public User create(User dto) throws Exception { 
-		if(this.findByName(dto) != null) {
+	public User findByIdTeamAndId(Long idTeam, Long id) {
+		return userRepository.find("team.id = ?1 and id = ?2", idTeam, id).firstResult();
+	}
+	
+	public User findByName(User user) {		
+		return User.find("name", user.name).firstResult();
+	}
+	
+	public List<User> listByTeam(Team team) {		
+		return User.list("team", team);
+	}
+	
+	public User create(User user) throws Exception { 
+		if(this.findByName(user) != null) {
 			throw new Exception("Element exists");
 		}
-		
-		User user = new User();
-		
-		user.name = dto.name;
-		user.key = dto.key;
-		user.team = dto.team;
 		
 		userRepository.persist(user);	
 		
 		return user;
 	}  
 	
-	public User update(Long id, User dto) {	
-		Optional<User> userOptional = this.findByIdOptional(id);
+	public User update(User userToUpdate, User user) {	
+		userToUpdate.name = user.name; 
 		
-		if (userOptional.isEmpty()) {
-			throw new NotFoundException();
-		}
+		userRepository.persist(userToUpdate);
 		
-		User user = userOptional.get();
-		
-		user.name = dto.name; 
-		
-		userRepository.persist(user);
-		
-		return user;
+		return userToUpdate;
 	}
 	
-	public void delete(Long idUser) {
-		Optional<User> userOptional = this.findByIdOptional(idUser);
-		
-		userOptional.ifPresentOrElse(User::delete, () -> {
-			throw new NotFoundException();
-		});
+	public void delete(User user) {
+		userRepository.delete(user);
 	}
 
 }
