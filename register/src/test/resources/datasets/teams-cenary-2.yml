@@ -1,0 +1,10 @@
+teams:
+  - id: 123
+    name: "test"
+users:
+  - id: 123
+    username: "user1"
+    team_id: 123
+  - id: 345
+    username: "user2"
+    team_id: 123

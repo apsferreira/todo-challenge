@@ -1,9 +1,11 @@
- package com.ojingo.register.presentation.resources;
+package com.ojingo.register.presentation.resources;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import javax.validation.Valid;
@@ -11,6 +13,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -20,100 +23,222 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.security.OAuthFlow;
+import org.eclipse.microprofile.openapi.annotations.security.OAuthFlows;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityScheme;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
-import com.ojingo.register.data.dto.CreateTeamDTO;
-import com.ojingo.register.data.dto.CreateTodoTeamDTO;
-import com.ojingo.register.data.dto.TeamDTO;
-import com.ojingo.register.data.dto.TeamMapper;
-import com.ojingo.register.data.dto.TodoDTO;
-import com.ojingo.register.data.dto.TodoMapper;
-import com.ojingo.register.data.dto.UpdateTeamDTO;
-import com.ojingo.register.data.dto.UpdateTodoTeamDTO;
-import com.ojingo.register.data.dto.UserDTO;
-import com.ojingo.register.data.dto.UserMapper;
-import com.ojingo.register.domain.models.Team;
-import com.ojingo.register.domain.models.Todo;
-import com.ojingo.register.presentation.service.TeamService;
-import com.ojingo.register.presentation.service.TodoService;
-import com.ojingo.register.presentation.service.UserService;
+import com.ojingo.register.data.repositories.TeamRepository;
+import com.ojingo.register.data.repositories.TodoRepository;
+import com.ojingo.register.data.repositories.UserRepository;
+import com.ojingo.register.domain.dto.CreateTeamDTO;
+import com.ojingo.register.domain.dto.CreateTodoTeamDTO;
+import com.ojingo.register.domain.dto.TeamDTO;
+import com.ojingo.register.domain.dto.TeamMapper;
+import com.ojingo.register.domain.dto.TodoDTO;
+import com.ojingo.register.domain.dto.TodoMapper;
+import com.ojingo.register.domain.dto.UpdateTeamDTO;
+import com.ojingo.register.domain.dto.UpdateTodoTeamDTO;
+import com.ojingo.register.domain.dto.UserDTO;
+import com.ojingo.register.domain.dto.UserMapper;
+import com.ojingo.register.domain.entities.Team;
+import com.ojingo.register.domain.entities.Todo;
+import com.ojingo.register.domain.entities.User;
 
 @Path("/teams")
-@Tag(name = "Teams")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Tag(name = "Teams")
+@SecurityScheme(securitySchemeName = "todo-oauth", type = SecuritySchemeType.OAUTH2, flows = @OAuthFlows(password = @OAuthFlow(tokenUrl = "http://localhost:8180/auth/realms/todo/protocol/openid-connect/token")))
 public class TeamResource {
-	
+
 	@Inject
 	TeamMapper teamMapper;
-	
+
 	@Inject
 	UserMapper userMapper;
-	
+
 	@Inject
 	TodoMapper todoMapper;
-		
-	@Inject 
-	TeamService teamService;
 	
 	@Inject 
-	UserService userService;
-	
+	TeamRepository teamRepository;
+
 	@Inject 
-	TodoService todoService;
+	UserRepository userRepository;
 	
+	@Inject
+	TodoRepository todoRepository;
+
 	@GET
-	public Response getAll() {		
+	@APIResponse(responseCode = "200", description = "Team list returned successfully")
+	@APIResponse(responseCode = "401", description = "Not authorized")
+	@APIResponse(responseCode = "403", description = "Forbidden")
+	@RolesAllowed("ROLE_ADMIN")	
+	public Response getAll() {
 		List<TeamDTO> results = new ArrayList<>();
-		
-		teamService.listAll().forEach(t -> results.add(teamMapper.convertToTeamDTO(t)));
-		
+
+		teamRepository.listAll().forEach(t -> results.add(teamMapper.convertToTeamDTO(t)));
+
+		return Response.ok(results).build();
+	}
+
+	@GET
+	@Path("{idTeam}")
+	@APIResponse(responseCode = "200", description = "Team returned successfully", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TeamDTO.class)))
+	@APIResponse(responseCode = "401", description = "Not authorized")
+	@APIResponse(responseCode = "403", description = "Forbidden")
+	@APIResponse(responseCode = "404", description = "Team not found")
+	@RolesAllowed("ROLE_USER")
+	public Response getTeam(@PathParam("idTeam") Long idTeam) {
+		Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
+
+		if (teamOptional.isEmpty()) {
+			throw new NotFoundException();
+		}
+
+		return Response.ok(teamMapper.convertToTeamDTO(teamOptional.get())).build();
+	}
+
+	@GET
+	@Path("{idTeam}/users")
+	@Tag(name = "Teams")
+	@Tag(name = "Users")
+	@APIResponse(responseCode = "200", description = "List of users by team returned successfully")
+	@APIResponse(responseCode = "401", description = "Not authorized")
+	@APIResponse(responseCode = "403", description = "Forbidden")
+	@APIResponse(responseCode = "404", description = "Team not found")
+	@RolesAllowed("ROLE_ADMIN")
+	public Response getUsersByTeam(@PathParam("idTeam") Long idTeam) {
+		Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
+
+		if (teamOptional.isEmpty()) {
+			throw new NotFoundException();
+		}
+
+		List<UserDTO> results = new ArrayList<>();
+
+		userRepository.list("team", teamOptional.get()).forEach(t -> results.add(userMapper.convertToUserDTO(t)));
+
 		return Response.ok(results).build();
 	}
 	
 	@GET
-	@Path("{idTeam}")
-	public Response getTeam(@PathParam("idTeam") Long idTeam) {
-		Optional<Team> teamOptional = teamService.findByIdOptional(idTeam);
+	@Path("{idTeam}/todos")
+	@Tag(name = "Teams")
+	@Tag(name = "Todos")
+	@APIResponse(responseCode = "200", description = "List of Todo by team returned successfully")
+	@APIResponse(responseCode = "401", description = "Not authorized")
+	@APIResponse(responseCode = "403", description = "Forbidden")
+	@APIResponse(responseCode = "404", description = "Team not found")
+	@RolesAllowed("ROLE_USER")
+	public Response getTodosByTeam(@PathParam("idTeam") Long idTeam) {
+		Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
 
 		if (teamOptional.isEmpty()) {
 			throw new NotFoundException();
-		}		
-		
-		return Response.ok(teamMapper.convertToTeamDTO(teamOptional.get())).build();
-	}
-	
-	@POST
-	@Transactional
-	public Response create(@Valid CreateTeamDTO createTeamDTO){
-		try {	
-			if(createTeamDTO != null) {
-				return Response.ok(teamMapper.convertToTeamDTO(
-						teamService.create(teamMapper.convertToTeam(createTeamDTO))
-					)).build();
-			} else {
-				return Response.status(400).build();
-			}
-			
-		} catch (IllegalArgumentException e) {
-			return Response.status(422).build();
-		} catch (Exception e) {
-			return Response.status(409).build();
 		}
-	}  
-	
+
+		List<TodoDTO> results = new ArrayList<>();
+
+		todoRepository.list("team", teamOptional.get()).forEach(t -> results.add(todoMapper.convertToTodoDTO(t)));
+
+		return Response.ok(results).build();
+	}
+
+	@GET
+	@Path("{idTeam}/todos/{idTodo}")
+	@Tag(name = "Todos")
+	@APIResponse(responseCode = "200", description = "Todo by team returned successfully")
+	@APIResponse(responseCode = "401", description = "Not authorized")
+	@APIResponse(responseCode = "403", description = "Forbidden")
+	@APIResponse(responseCode = "404", description = "Todo not found")
+	@RolesAllowed("ROLE_USER")
+	public Response getTodoByTeam(@PathParam("idTeam") Long idTeam, @PathParam("idTodo") Long idTodo) {
+		Optional<Todo> todoOptional = todoRepository.findByIdOptional(idTodo);
+
+		if (todoOptional.isEmpty()) {
+			throw new NotFoundException();
+		}
+		
+		if(todoOptional.get().team.id == idTeam) {
+			return Response.ok(todoMapper.convertToTodoDTO(todoOptional.get())).build();			
+		} else {
+			return Response.status(404).build();
+		}
+	}
+
+	@POST
+	@APIResponse(responseCode = "201", description = "New team created successfully")
+	@APIResponse(responseCode = "400", description = "Invalid data")
+	@APIResponse(responseCode = "401", description = "Not authorized")
+	@APIResponse(responseCode = "403", description = "Forbidden")
+	@APIResponse(responseCode = "422", description = "Team already exists")
+	@RolesAllowed("ROLE_ADMIN")
+	@Transactional
+	public Response create(@Valid CreateTeamDTO createTeamDTO) {
+		Team team = teamMapper.convertToTeam(createTeamDTO);
+
+		if (teamRepository.create(team).isPersistent()) {
+			return Response.created(URI.create("/teams/" + team.id.toString())).build();
+		} else {
+			return Response.status(422).build();
+		}
+	}
+
+	@POST
+	@Path("{idTeam}/todos")
+	@Tag(name = "Teams")
+	@Tag(name = "Todos")
+	@APIResponse(responseCode = "201", description = "Todo by team created successfully")
+	@APIResponse(responseCode = "401", description = "Not authorized")
+	@APIResponse(responseCode = "403", description = "Forbidden")
+	@APIResponse(responseCode = "404", description = "Team not found")
+	@APIResponse(responseCode = "500", description = "Error to persist Todo")
+	@RolesAllowed("ROLE_ADMIN")
+	@Transactional
+	public Response createTodoByTeam(@PathParam("idTeam") Long idTeam, @Valid CreateTodoTeamDTO createTodoDTO)
+			throws Exception {
+		Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
+
+		if (teamOptional.isEmpty()) {
+			throw new NotFoundException();
+		}
+		
+		Todo todo = todoMapper.convertToTodo(createTodoDTO);
+		todo.team = teamOptional.get();
+		
+		if (todoRepository.create(todo).isPersistent()) {
+			return Response.created(URI.create("/teams/" + idTeam.toString() + "/todos/" + todo.id.toString())).build();
+		} else {
+			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
+		}
+	}
+
 	@PUT
 	@Path("{idTeam}")
+	@APIResponse(responseCode = "200", description = "Team updated successfully")
+	@APIResponse(responseCode = "400", description = "Invalid data")
+	@APIResponse(responseCode = "401", description = "Not authorized")
+	@APIResponse(responseCode = "403", description = "Forbidden")
+	@APIResponse(responseCode = "404", description = "Team not found")
+	@APIResponse(responseCode = "409", description = "conflict with teams")
+	@RolesAllowed("ROLE_ADMIN")
 	@Transactional
 	public Response update(@PathParam("idTeam") Long idTeam, UpdateTeamDTO updateTeamDTO) {
-		if(idTeam != null && updateTeamDTO != null) {
-			Optional<Team> teamOptional = teamService.findByIdOptional(idTeam);
-	
+		if (idTeam != null && updateTeamDTO != null) {
+			Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
+
 			if (teamOptional.isEmpty()) {
 				throw new NotFoundException();
 			}
-			
-			if (teamService.update(teamOptional.get(), teamMapper.convertToTeam(updateTeamDTO)).isPersistent()) {			
+
+			if (teamRepository.update(teamOptional.get(), teamMapper.convertToTeam(updateTeamDTO)).isPersistent()) {
 				return Response.ok("Team has been successfully changed").build();
 			} else {
 				return Response.status(409).build();
@@ -122,135 +247,106 @@ public class TeamResource {
 			return Response.status(400).build();
 		}
 	}
-	
-	@DELETE
-	@Path("{idTeam}")
-	@Transactional
-	public Response delete(@PathParam("idTeam") Long idTeam) {
-		Optional<Team> teamOptional = teamService.findByIdOptional(idTeam);
-		
-		if (teamOptional.isEmpty()) {
-			throw new NotFoundException();
-		}
 
-		teamService.delete(teamOptional.get());
-		return Response.ok(204).build();	
-	}
-	
-	@GET
-	@Path("{idTeam}/users")
-	@Tag(name = "Teams")
-	@Tag(name = "Users")
-	public Response getUsersFromTeam(@PathParam("idTeam") Long idTeam) {
-		Optional<Team> teamOptional = teamService.findByIdOptional(idTeam);
-
-		if (teamOptional.isEmpty()) {
-			throw new NotFoundException();
-		}
-		
-		List<UserDTO> results = new ArrayList<>();
-		
-		userService.listByTeam(teamOptional.get()).forEach(t -> results.add(userMapper.convertToUserDTO(t)));
-		
-		return Response.ok(results).build();
-	}
-	
-	@GET
-	@Path("{idTeam}/users/{idUser}")
-	@Tag(name = "Todos")
-	public Response getUserFromTeam(@PathParam("idTeam") Long idTeam, @PathParam("idUser") Long idUser) {
-		Optional<UserDTO> userOptional = Optional.ofNullable(userMapper.convertToUserDTO(userService.findByIdTeamAndId(idTeam, idUser)));
-		
-		if (userOptional.isEmpty()) {
-			throw new NotFoundException();
-		}
-		
-		return Response.ok(userOptional.get()).build();
-	}
-	
-	@GET
-	@Path("{idTeam}/todos")
-	@Tag(name = "Teams")
-	@Tag(name = "Todos")
-	public Response getTodosFromTeam(@PathParam("idTeam") Long idTeam) {
-		Optional<Team> teamOptional = teamService.findByIdOptional(idTeam);
-
-		if (teamOptional.isEmpty()) {
-			throw new NotFoundException();
-		}
-		
-		List<TodoDTO> results = new ArrayList<>();
-		
-		todoService.listByTeam(teamOptional.get()).forEach(t -> results.add(todoMapper.convertToTodoDTO(t)));
-		
-		
-		return Response.ok(results).build();
-	}
-	
-	@GET
-	@Path("{idTeam}/todos/{idTodo}")
-	@Tag(name = "Todos")
-	public Response getTodoFromTeam(@PathParam("idTeam") Long idTeam, @PathParam("idTodo") Long idTodo) {
-		Optional<Todo> todoOptional = Optional.ofNullable(todoService.findByIdTeamAndId(idTeam, idTodo));
-		
-		if (todoOptional.isEmpty()) {
-			throw new NotFoundException();
-		}
-		
-		return Response.ok(todoMapper.convertToTodoDTO(todoOptional.get())).build();
-	}
-
-	@POST
-	@Path("{idTeam}/todos")
-	@Transactional
-	@Tag(name = "Teams")
-	@Tag(name = "Todos")
-	public Response createTodoFromTeam(@PathParam("idTeam") Long idTeam, @Valid CreateTodoTeamDTO createTodoDTO) throws Exception {
-		Optional<Team> teamOptional = teamService.findByIdOptional(idTeam);
-
-		if (teamOptional.isEmpty()) {
-			throw new NotFoundException();
-		}
-		
-		Todo todo = todoService.createFromTeam(teamOptional.get(), todoMapper.convertToTodo(createTodoDTO));
-		
-		if (todo.isPersistent()) {			
-			return Response.ok(todoMapper.convertToTodoDTO(todo)).build();			
-		} else {
-			return Response.status(Status.INTERNAL_SERVER_ERROR).build();
-		}
-	}
-	
 	@PUT
 	@Path("{idTeam}/todos/{idTodo}")
-	@Transactional
 	@Tag(name = "Teams")
 	@Tag(name = "Todos")
-	public Response updateTodoFromTeam(@PathParam("idTeam") Long idTeam, @PathParam("idTodo") Long idTodo, UpdateTodoTeamDTO updateTodoTeamDTO) throws Exception {
-		Optional<Todo> todoOptional = Optional.ofNullable(todoService.findByIdTeamAndId(idTeam, idTodo));
+	@APIResponse(responseCode = "200", description = "Todo by team updated successfully")
+	@APIResponse(responseCode = "400", description = "Invalid data")
+	@APIResponse(responseCode = "401", description = "Not authorized")
+	@APIResponse(responseCode = "403", description = "Forbidden")
+	@APIResponse(responseCode = "404", description = "Todo not found")
+	@APIResponse(responseCode = "409", description = "Conflict with Todos")
+	@RolesAllowed("ROLE_ADMIN")
+	@Transactional
+	public Response updateTodoByTeam(@PathParam("idTeam") Long idTeam, @PathParam("idTodo") Long idTodo,
+			UpdateTodoTeamDTO updateTodoTeamDTO) throws Exception {
+		Optional<Todo> todoOptional = todoRepository.findByIdOptional(idTodo);
 
-		if (todoOptional.isEmpty()) {
+		if (todoOptional.isEmpty() || todoOptional.get().team.id != idTeam) {
 			throw new NotFoundException();
-		}		
+		}
 		
-		if (todoService.update(todoOptional.get(), todoMapper.convertToTodo(updateTodoTeamDTO)).isPersistent()) {			
+		if (todoRepository.update(todoOptional.get(), todoMapper.convertToTodo(updateTodoTeamDTO)).isPersistent()) {
 			return Response.ok("Todo has been successfully changed").build();
 		} else {
 			return Response.status(409).build();
 		}
 	}
 	
+	@PATCH
+	@Path("{idTeam}/users/{idUser}")
+	@Tag(name = "Teams")
+	@Tag(name = "Users")
+	@APIResponse(responseCode = "200", description = "User associate a team with successfully")
+	@APIResponse(responseCode = "400", description = "Invalid data")
+	@APIResponse(responseCode = "401", description = "Not authorized")
+	@APIResponse(responseCode = "403", description = "Forbidden")
+	@APIResponse(responseCode = "404", description = "Todo not found")
+	@APIResponse(responseCode = "409", description = "Conflict with ussers")
+	@RolesAllowed("ROLE_ADMIN")
+	@Transactional
+	public Response updateUserByTeam(@PathParam("idTeam") Long idTeam, @PathParam("idUser") Long idUser) throws Exception {
+		Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
+
+		if (teamOptional.isEmpty()) {
+			throw new NotFoundException();
+		}
+
+		Optional<User> userOptional = userRepository.findByIdOptional(idUser);
+
+		if (userOptional.isEmpty()) {
+			throw new NotFoundException();
+		}
+		
+		User user = userOptional.get(); 
+		user.team = teamOptional.get();
+		
+		if (userRepository.update(userOptional.get(), user).isPersistent()) {
+			return Response.ok("User has been successfully changed").build();
+		} else {
+			return Response.status(409).build();
+		}
+	}
+
+	@DELETE
+	@Path("{idTeam}")
+	@APIResponse(responseCode = "204", description = "Team deleted successfully")
+	@APIResponse(responseCode = "401", description = "Not authorized")
+	@APIResponse(responseCode = "403", description = "Forbidden")
+	@APIResponse(responseCode = "404", description = "Team not found")
+	@RolesAllowed("ROLE_ADMIN")
+	@Transactional
+	public Response delete(@PathParam("idTeam") Long idTeam) {
+		Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
+
+		if (teamOptional.isEmpty()) {
+			throw new NotFoundException();
+		}
+
+		teamRepository.delete(teamOptional.get());
+		
+		return Response.ok(204).build();
+	}
+
 	@DELETE
 	@Path("{idTeam}/todos/{idTodo}")
+	@APIResponse(responseCode = "204", description = "Todo by team deleted successfully")
+	@APIResponse(responseCode = "401", description = "Not authorized")
+	@APIResponse(responseCode = "403", description = "Forbidden")
+	@APIResponse(responseCode = "404", description = "Todo not found")
+	@RolesAllowed("ROLE_ADMIN")
 	@Transactional
-	public Response deleteTodoFromTeam(@PathParam("idTeam") Long idTeam, @PathParam("idTeam") Long idTodo) {
-		Optional<Todo> todoOptional = Optional.ofNullable(todoService.findByIdTeamAndId(idTeam, idTodo));
-		
+	public Response deleteTodoByTeam(@PathParam("idTeam") Long idTeam, @PathParam("idTeam") Long idTodo) {
+		Optional<Todo> todoOptional = todoRepository.findByIdOptional(idTodo);
+
 		if (todoOptional.isEmpty()) {
 			throw new NotFoundException();
 		}
 
-		todoService.delete(todoOptional.get());
-		return Response.ok(204).build();	
+		todoRepository.delete(todoOptional.get());
+		
+		return Response.ok(204).build();
 	}
 }

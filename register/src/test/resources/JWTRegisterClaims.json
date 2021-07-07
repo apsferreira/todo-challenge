@@ -1,0 +1,7 @@
+{
+    "iss": "http://localhost:8180/auth/realms/todo",
+    "groups": [
+    	"ROLE_ADMIN",
+    	"ROLE_USER"
+    ]
+}

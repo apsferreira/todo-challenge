@@ -40,3 +40,4 @@ nb-configuration.xml
 
 # Local database
 mongo_data
+postgres_data

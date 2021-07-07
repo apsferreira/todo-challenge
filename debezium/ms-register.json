@@ -1,0 +1,14 @@
+{
+    "name": "register-connector",
+    "config": {
+        "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+        "tasks.max": "1",
+        "database.hostname": "postgres_register",
+        "database.port": "5432",
+        "database.user": "register",
+        "database.password": "s3cr3t",
+        "database.dbname" : "postgres",
+        "database.server.name": "register",
+        "schema.whitelist": "public"
+    }
+}

@@ -1,4 +1,6 @@
 teams:
-  - ID: 123
-    NAME: "test"
+  - id: 123
+    name: "test"
+  - id: 345
+    name: "test2"
       
