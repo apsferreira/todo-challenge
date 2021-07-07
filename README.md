@@ -34,7 +34,6 @@ In this project, we have two administrative profiles. the profile administrator 
 
 
 ![Use Cases](/documentation/use_case.png)
-Format: ![Alt Text](url)
 
 
 The keycloak is the solution responsible for register an user and set the permissions this. 
@@ -53,16 +52,21 @@ debezium is the solution for sending operations done on tables that are in the p
 
 ## Architecture
 
+
 ![Architecture](/documentation/architecture.png)
 
 
+
 ## DB Models of the Microservices
+
 
 ![Model DB MS Register](/documentation/model_db_register.png)
 
 ![Model DB MS TODO](/documentation/model_db_todo.png)
 
+
 ## Class Diagrams of the Microservices
+
 
 ![Class Diagram MS Register](/documentation/class_register.png)
 
@@ -75,6 +79,7 @@ debezium is the solution for sending operations done on tables that are in the p
 
 ### Register MS
 
+
 ![Teams Endpoints](/documentation/teams_endpoints_register.png)
 
 ![Todos Endpoints](/documentation/todos_endpoints_register.png)
@@ -83,6 +88,7 @@ debezium is the solution for sending operations done on tables that are in the p
 
 
 ### TODO MS
+
 
 ![Notes Endpoints](/documentation/notes_endpoints_todo.png)
 
@@ -99,6 +105,7 @@ debezium is the solution for sending operations done on tables that are in the p
 - docker-compose
 - maven
 - java 11
+
 
 ### Start Application
 
