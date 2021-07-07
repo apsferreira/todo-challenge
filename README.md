@@ -54,24 +54,19 @@ debezium is the solution for sending operations done on tables that are in the p
 ## Architecture
 
 ![Architecture](/documentation/architecture.png)
-Format: ![Alt Text](url)
 
 
 ## DB Models of the Microservices
 
 ![Model DB MS Register](/documentation/model_db_register.png)
-Format: ![Alt Text](url)
 
 ![Model DB MS TODO](/documentation/model_db_todo.png)
-Format: ![Alt Text](url)
 
 ## Class Diagrams of the Microservices
 
 ![Class Diagram MS Register](/documentation/class_register.png)
-Format: ![Alt Text](url)
 
 ![Class Diagram MS TODO](/documentation/class_todo.png)
-Format: ![Alt Text](url)
 
 [Document for a best visualization](/documentation/class_diagram.pdf)
 
@@ -81,25 +76,19 @@ Format: ![Alt Text](url)
 ### Register MS
 
 ![Teams Endpoints](/documentation/teams_endpoints_register.png)
-Format: ![Alt Text](url)
 
 ![Todos Endpoints](/documentation/todos_endpoints_register.png)
-Format: ![Alt Text](url)
 
 ![Users Endpoints](/documentation/users_endpoints_register.png)
-Format: ![Alt Text](url)
 
 
 ### TODO MS
 
-![Notes Endpoints](/documentation/teams_endpoints_todo.png)
-Format: ![Alt Text](url)
+![Notes Endpoints](/documentation/notes_endpoints_todo.png)
 
 ![Todos Endpoints](/documentation/todos_endpoints_todo.png)
-Format: ![Alt Text](url)
 
 ![Users Endpoints](/documentation/users_endpoints_todo.png)
-Format: ![Alt Text](url)
 
 
 ## Getting started
