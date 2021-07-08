@@ -22,7 +22,7 @@ This project was built using the technologies below:
 - [Keycloak](https://www.keycloak.org/)
 - [Maven](https://maven.apache.org/)
 
-## Explain the project
+## Explaining the project
 
 This project contains two microservices: register and todo.
 
@@ -49,6 +49,8 @@ Graylog is the solution for centralized application logging.
 jaeger is the solution for analyzing application requests.
 
 debezium is the solution for sending operations done on tables that are in the postgres database to kafka. this operations are integrated in all microservices.
+
+
 
 ## Architecture
 

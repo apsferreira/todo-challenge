@@ -80,6 +80,18 @@ services:
        - 9000:9000
      depends_on:
        - kafka
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana
+    network_mode: "host"
+    environment:
+      ELASTICSEARCH_HOSTS: http://localhost:9200
+  logstash:
+    image: docker.elastic.co/logstash/logstash-oss
+    volumes:
+       - source: ./pipelines
+         target: /usr/share/logstash/pipeline
+         type: bind
   connect:
     container_name: debezium_todo
     image: debezium/connect:1.5.4.Final
