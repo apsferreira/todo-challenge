@@ -59,18 +59,25 @@ debezium is the solution for sending operations done on tables that are in the p
 
 ## DB Models of the Microservices
 
+### Register
 
 ![Model DB MS Register](/documentation/model_db_register.png)
+
+### Todo
 
 ![Model DB MS TODO](/documentation/model_db_todo.png)
 
 
 ## Class Diagrams of the Microservices
 
+### Register
 
 ![Class Diagram MS Register](/documentation/class_register.png)
 
+### Todo
+
 ![Class Diagram MS TODO](/documentation/class_todo.png)
+
 
 [Document for a best visualization](/documentation/class_diagram.pdf)
 
@@ -79,20 +86,30 @@ debezium is the solution for sending operations done on tables that are in the p
 
 ### Register MS
 
+#### Teams
 
 ![Teams Endpoints](/documentation/teams_endpoints_register.png)
 
+#### Todos
+
 ![Todos Endpoints](/documentation/todos_endpoints_register.png)
+
+#### Users
 
 ![Users Endpoints](/documentation/users_endpoints_register.png)
 
 
 ### TODO MS
 
+#### Notes
 
 ![Notes Endpoints](/documentation/notes_endpoints_todo.png)
 
+#### Todos
+
 ![Todos Endpoints](/documentation/todos_endpoints_todo.png)
+
+#### Users
 
 ![Users Endpoints](/documentation/users_endpoints_todo.png)
 
@@ -105,7 +122,6 @@ debezium is the solution for sending operations done on tables that are in the p
 - docker-compose
 - maven
 - java 11
-
 
 ### Start Application
 
