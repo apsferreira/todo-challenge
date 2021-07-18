@@ -170,6 +170,7 @@ public class TeamResource {
 
 	@GET
 	@Path("{idTeam}/todos/{idTodo}")
+	@Tag(name = "Teams")
 	@Tag(name = "Todos")
 	@APIResponse(responseCode = "200", description = "Todo by team returned successfully")
 	@APIResponse(responseCode = "401", description = "Not authorized")
@@ -177,15 +178,39 @@ public class TeamResource {
 	@APIResponse(responseCode = "404", description = "Todo not found")
 	@RolesAllowed("ROLE_USER")
 	@CacheResult(cacheName = "getTodoByTeam-register")
-	public Response getTodoByTeam(@CacheKey @PathParam("idTeam") Long idTeam, @PathParam("idTodo") Long idTodo) {
+	public Response getTodoByTeam(@CacheKey @PathParam("idTeam") Long idTeam, @CacheKey @PathParam("idTodo") Long idTodo) {
 		Optional<Todo> todoOptional = todoRepository.findByIdOptional(idTodo);
 
 		if (todoOptional.isEmpty()) {
 			throw new NotFoundException();
 		}
 		
-		if(todoOptional.get().team.id == idTeam) {
+		if(todoOptional.get().team.id.equals(idTeam)) {
 			return Response.ok(todoMapper.convertToTodoDTO(todoOptional.get())).build();			
+		} else {
+			return Response.status(404).build();
+		}
+	}
+	
+	@GET
+	@Path("{idTeam}/users/{idUser}")
+	@Tag(name = "Teams")
+	@Tag(name = "Users")
+	@APIResponse(responseCode = "200", description = "Users by team returned successfully")
+	@APIResponse(responseCode = "401", description = "Not authorized")
+	@APIResponse(responseCode = "403", description = "Forbidden")
+	@APIResponse(responseCode = "404", description = "User not found")
+	@RolesAllowed("ROLE_USER")
+	@CacheResult(cacheName = "getUserByTeam-register")
+	public Response getUserByTeam(@CacheKey @PathParam("idTeam") Long idTeam, @CacheKey @PathParam("idUser") Long idUser) {
+		Optional<User> userOptional = userRepository.findByIdOptional(idUser);
+
+		if (userOptional.isEmpty()) {
+			throw new NotFoundException();
+		}
+		
+		if(userOptional.get().team.id.equals(idTeam)) {
+			return Response.ok(userMapper.convertToUserDTO(userOptional.get())).build();			
 		} else {
 			return Response.status(404).build();
 		}
