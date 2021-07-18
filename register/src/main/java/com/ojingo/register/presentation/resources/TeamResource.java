@@ -50,6 +50,11 @@ import com.ojingo.register.domain.entities.Team;
 import com.ojingo.register.domain.entities.Todo;
 import com.ojingo.register.domain.entities.User;
 
+import io.quarkus.cache.CacheKey;
+import io.quarkus.cache.CacheResult;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+
 @Path("/teams")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -74,6 +79,9 @@ public class TeamResource {
 	
 	@Inject
 	TodoRepository todoRepository;
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(TeamResource.class);
+
 
 	@GET
 	@APIResponse(responseCode = "200", description = "Team list returned successfully")
@@ -82,6 +90,8 @@ public class TeamResource {
 	@RolesAllowed("ROLE_ADMIN")	
 	public Response getAll() {
 		List<TeamDTO> results = new ArrayList<>();
+		
+		LOGGER.info("register -> TeamResource -> getall route was requested");
 
 		teamRepository.listAll().forEach(t -> results.add(teamMapper.convertToTeamDTO(t)));
 
@@ -95,8 +105,11 @@ public class TeamResource {
 	@APIResponse(responseCode = "403", description = "Forbidden")
 	@APIResponse(responseCode = "404", description = "Team not found")
 	@RolesAllowed("ROLE_USER")
-	public Response getTeam(@PathParam("idTeam") Long idTeam) {
+	@CacheResult(cacheName = "getTeam-register")
+	public Response getTeam(@CacheKey @PathParam("idTeam") Long idTeam) {
 		Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
+		
+		LOGGER.info("register -> TeamResource -> getTeam route was requested");
 
 		if (teamOptional.isEmpty()) {
 			throw new NotFoundException();
@@ -114,8 +127,10 @@ public class TeamResource {
 	@APIResponse(responseCode = "403", description = "Forbidden")
 	@APIResponse(responseCode = "404", description = "Team not found")
 	@RolesAllowed("ROLE_ADMIN")
-	public Response getUsersByTeam(@PathParam("idTeam") Long idTeam) {
+	public Response getUsersByTeam(@CacheKey @PathParam("idTeam") Long idTeam) {
 		Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
+		
+		LOGGER.info("register -> TeamResource -> getUsersByTeam route was requested");
 
 		if (teamOptional.isEmpty()) {
 			throw new NotFoundException();
@@ -137,8 +152,10 @@ public class TeamResource {
 	@APIResponse(responseCode = "403", description = "Forbidden")
 	@APIResponse(responseCode = "404", description = "Team not found")
 	@RolesAllowed("ROLE_USER")
-	public Response getTodosByTeam(@PathParam("idTeam") Long idTeam) {
+	public Response getTodosByTeam(@CacheKey @PathParam("idTeam") Long idTeam) {
 		Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
+		
+		LOGGER.info("register -> TeamResource -> getTodosByTeam route was requested");
 
 		if (teamOptional.isEmpty()) {
 			throw new NotFoundException();
@@ -146,7 +163,7 @@ public class TeamResource {
 
 		List<TodoDTO> results = new ArrayList<>();
 
-		todoRepository.list("team", teamOptional.get()).forEach(t -> results.add(todoMapper.convertToTodoDTO(t)));
+		todoRepository.list("team", teamOptional.get()).forEach(todo -> results.add(todoMapper.convertToTodoDTO(todo)));
 
 		return Response.ok(results).build();
 	}
@@ -159,7 +176,8 @@ public class TeamResource {
 	@APIResponse(responseCode = "403", description = "Forbidden")
 	@APIResponse(responseCode = "404", description = "Todo not found")
 	@RolesAllowed("ROLE_USER")
-	public Response getTodoByTeam(@PathParam("idTeam") Long idTeam, @PathParam("idTodo") Long idTodo) {
+	@CacheResult(cacheName = "getTodoByTeam-register")
+	public Response getTodoByTeam(@CacheKey @PathParam("idTeam") Long idTeam, @PathParam("idTodo") Long idTodo) {
 		Optional<Todo> todoOptional = todoRepository.findByIdOptional(idTodo);
 
 		if (todoOptional.isEmpty()) {
@@ -264,7 +282,7 @@ public class TeamResource {
 			UpdateTodoTeamDTO updateTodoTeamDTO) throws Exception {
 		Optional<Todo> todoOptional = todoRepository.findByIdOptional(idTodo);
 
-		if (todoOptional.isEmpty() || todoOptional.get().team.id != idTeam) {
+		if (todoOptional.isEmpty() || !todoOptional.get().team.id.equals(idTeam)) {
 			throw new NotFoundException();
 		}
 		
@@ -332,13 +350,15 @@ public class TeamResource {
 
 	@DELETE
 	@Path("{idTeam}/todos/{idTodo}")
+	@Tag(name = "Teams")
+	@Tag(name = "Todos")
 	@APIResponse(responseCode = "204", description = "Todo by team deleted successfully")
 	@APIResponse(responseCode = "401", description = "Not authorized")
 	@APIResponse(responseCode = "403", description = "Forbidden")
 	@APIResponse(responseCode = "404", description = "Todo not found")
 	@RolesAllowed("ROLE_ADMIN")
 	@Transactional
-	public Response deleteTodoByTeam(@PathParam("idTeam") Long idTeam, @PathParam("idTeam") Long idTodo) {
+	public Response deleteTodoByTeam(@PathParam("idTeam") Long idTeam, @PathParam("idTodo") Long idTodo) {
 		Optional<Todo> todoOptional = todoRepository.findByIdOptional(idTodo);
 
 		if (todoOptional.isEmpty()) {

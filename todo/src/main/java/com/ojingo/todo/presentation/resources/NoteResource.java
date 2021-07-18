@@ -39,6 +39,8 @@ import com.ojingo.todo.domain.dto.NoteMapper;
 import com.ojingo.todo.domain.dto.UpdateNoteDTO;
 import com.ojingo.todo.presentation.services.NoteService;
 
+import io.quarkus.cache.CacheKey;
+import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
@@ -75,8 +77,9 @@ public class NoteResource {
 	@Path("{idNote}")
 	@APIResponse(responseCode = "200", description = "Note returned successfully")
 	@APIResponse(responseCode = "404", description = "Note not found")
-	@RolesAllowed({"ROLE_USER"})
-	public Uni<Response> getNote(@PathParam("idNote") UUID idNote) {				
+	@RolesAllowed("ROLE_USER")
+	@CacheResult(cacheName = "getNote-todo")
+	public Uni<Response> getNote(@CacheKey @PathParam("idNote") UUID idNote) {				
 		return noteRepository.findById(idNote)
 				.map(note -> note != null ? Response.ok(noteMapper.convertToNoteDTO(note)) : Response.status(Status.NOT_FOUND))
 				.onItem().transform(ResponseBuilder::build);
@@ -86,8 +89,8 @@ public class NoteResource {
 	@Path("{idNote}/versions")
 	@APIResponse(responseCode = "200", description = "Note returned successfully")
 	@APIResponse(responseCode = "404", description = "Note not found")
-	@RolesAllowed({"ROLE_USER"})
-	public Multi<Response> getVersionList(@PathParam("idNote") UUID idNote) {				
+	@RolesAllowed("ROLE_USER")	
+	public Multi<Response> getVersionList(@CacheKey @PathParam("idNote") UUID idNote) {				
 		return versionRepository.listVersionsOfNote(idNote)
 				.onItem().transform(version -> noteRepository.findById(version.getNewNote().getId()).await().indefinitely())
 				.map(note -> note != null ? Response.ok(noteMapper.convertToNoteDTO(note)) : Response.status(Status.NOT_FOUND))

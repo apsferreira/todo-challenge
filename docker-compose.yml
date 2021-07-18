@@ -77,21 +77,21 @@ services:
      environment:
        KAFKA_BROKERCONNECT: kafka:9092
      ports:
-       - 9000:9000
+       - 9001:9000
      depends_on:
        - kafka
-  kibana:
-    container_name: kibana
-    image: docker.elastic.co/kibana/kibana
-    network_mode: "host"
-    environment:
-      ELASTICSEARCH_HOSTS: http://localhost:9200
-  logstash:
-    image: docker.elastic.co/logstash/logstash-oss
-    volumes:
-       - source: ./pipelines
-         target: /usr/share/logstash/pipeline
-         type: bind
+  # kibana:
+  #   container_name: kibana
+  #   image: docker.elastic.co/kibana/kibana
+  #   network_mode: "host"
+  #   environment:
+  #     ELASTICSEARCH_HOSTS: http://localhost:9200
+  # logstash:
+  #   image: docker.elastic.co/logstash/logstash-oss
+  #   volumes:
+  #      - source: ./pipelines
+  #        target: /usr/share/logstash/pipeline
+  #        type: bind
   connect:
     container_name: debezium_todo
     image: debezium/connect:1.5.4.Final
@@ -116,4 +116,24 @@ services:
       - postgres_register
       - postgres_todo
       - postgres_keycloak
+  elasticsearch: # sudo sysctl -w vm.max_map_count=262144
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.8.2
+    ports:
+      - "9200:9200"
+    environment:
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+  mongo:
+    image: mongo:4.0
+  graylog: # curl -H "Content-Type: application/json" -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "X-Requested-By: curl" -X POST -v -d '{"title":"udp input","configuration":{"recv_buffer_size":262144,"bind_address":"0.0.0.0","port":12201,"decompress_size_limit":8388608},"type":"org.graylog2.inputs.gelf.udp.GELFUDPInput","global":true}' http://localhost:9000/api/system/inputs    
+    image: graylog/graylog:3.1
+    ports:
+      - "9000:9000"
+      - "12201:12201/udp"
+      - "1514:1514"
+    environment:
+      GRAYLOG_HTTP_EXTERNAL_URI: "http://127.0.0.1:9000/"
+      GRAYLOG_ROOT_TIMEZONE: Brazil/East
+    depends_on:
+      - elasticsearch
+      - mongo
      

@@ -33,6 +33,8 @@ import com.ojingo.todo.domain.dto.NoteMapper;
 import com.ojingo.todo.domain.dto.TodoDTO;
 import com.ojingo.todo.domain.dto.TodoMapper;
 
+import io.quarkus.cache.CacheKey;
+import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
@@ -59,7 +61,7 @@ public class TodoResource {
 	@GET
 	@APIResponse(responseCode = "200", description = "Todo lists returned successfully", 
 		content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TodoDTO.class)))
-		@RolesAllowed("ROLE_ADMIN")
+		@RolesAllowed("ROLE_ADMIN")	
 	public Multi<TodoDTO> getAll() {
 		return todoRepository.listAll().map(todo -> todoMapper.convertToTodoDTO(todo));
 	}
@@ -69,7 +71,8 @@ public class TodoResource {
 	@APIResponse(responseCode = "200", description = "Todo returned successfully")		
 	@APIResponse(responseCode = "404", description = "Todo not found")
 	@RolesAllowed("ROLE_USER")
-	public Uni<Response> getTodo(@PathParam("idTodo") UUID idTodo) {				
+	@CacheResult(cacheName = "getNote-todo")
+	public Uni<Response> getTodo(@CacheKey @PathParam("idTodo") UUID idTodo) {				
 		return todoRepository.findById(idTodo)
 				.map(todo -> todo != null ? Response.ok(todo) : Response.status(Status.NOT_FOUND))
 				.onItem().transform(ResponseBuilder::build);
@@ -82,7 +85,7 @@ public class TodoResource {
 	@Tag(name = "Todos")
 	@Tag(name = "Notes")
 	@RolesAllowed("ROLE_USER")
-	public Multi<NoteDTO> getNotesByTodo(@PathParam("idTodo") UUID idTodo, @QueryParam List<String> filter, @QueryParam String sort) {				
+	public Multi<NoteDTO> getNotesByTodo(@CacheKey @PathParam("idTodo") UUID idTodo, @QueryParam List<String> filter, @QueryParam String sort) {				
 		return noteRepository.listByTodo(idTodo, filter, sort)
 				.map(note -> noteMapper.convertToNoteDTO(note));
 	}	

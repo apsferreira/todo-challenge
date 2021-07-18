@@ -8,5 +8,5 @@ public class CreateTodoTeamDTO {
 
 	@NotNull
 	@NotEmpty
-	public String name;
+	public String description;
 }

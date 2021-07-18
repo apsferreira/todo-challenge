@@ -23,6 +23,8 @@ import com.ojingo.register.domain.dto.UserDTO;
 import com.ojingo.register.domain.dto.UserMapper;
 import com.ojingo.register.domain.entities.User;
 
+import io.quarkus.cache.CacheResult;
+
 @Path("/users")
 @Tag(name = "Users")	
 @Produces(MediaType.APPLICATION_JSON)
@@ -50,7 +52,8 @@ public class UserResource {
 	@Path("{idUser}")
 	@APIResponse(responseCode = "200", description = "User returned successfully")
 	@APIResponse(responseCode = "404", description = "User not found")
-	@RolesAllowed({"ROLE_ADMIN", "ROLE_USER"})
+	@RolesAllowed("ROLE_USER")
+	@CacheResult(cacheName = "getUser-register")
 	public Response getUser(@PathParam("idUser") Long idUser) {
 		Optional<User> userOptional = userRepository.findByIdOptional(idUser);
 

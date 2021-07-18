@@ -34,6 +34,8 @@ import com.ojingo.todo.domain.dto.TodoDTO;
 import com.ojingo.todo.domain.dto.UserDTO;
 import com.ojingo.todo.domain.dto.UserMapper;
 
+import io.quarkus.cache.CacheKey;
+import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
 
@@ -70,7 +72,8 @@ public class UserResource {
 	@APIResponse(responseCode = "200", description = "User returned successfully")		
 	@APIResponse(responseCode = "404", description = "User not found")
 	@RolesAllowed({"ROLE_USER"})
-	public Uni<Response> getUser(@PathParam("idUser") UUID idUser) {				
+	@CacheResult(cacheName = "getUser-todo")
+	public Uni<Response> getUser(@CacheKey @PathParam("idUser") UUID idUser) {				
 		return userRepository.findById(idUser)
 				.map(user -> user != null ? Response.ok(user) : Response.status(Status.NOT_FOUND))
 				.onItem().transform(ResponseBuilder::build);
@@ -83,7 +86,7 @@ public class UserResource {
 	@Tag(name = "Users")
 	@Tag(name = "Notes")
 	@RolesAllowed({"ROLE_USER"})
-	public Multi<NoteDTO> getNotesByUser(@PathParam("idUser") UUID idUser, @QueryParam List<String> filter, @QueryParam String sort) {				
+	public Multi<NoteDTO> getNotesByUser(@CacheKey @PathParam("idUser") UUID idUser, @QueryParam List<String> filter, @QueryParam String sort) {				
 		return noteRepository.listByUser(idUser, filter, sort)
 				.map(note -> noteMapper.convertToNoteDTO(note));
 	}
