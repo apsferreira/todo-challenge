@@ -34,7 +34,7 @@ public class UserRepository {
     }
 	
 	public Uni<User> findById(UUID id) {
-		LOGGER.info("Find by user Id: " + id);
+		LOGGER.info("Find by user Id: {0}", id);
 		
         return this.client
         		.preparedQuery("SELECT * FROM users WHERE id = $1").execute(Tuple.of(id))
@@ -43,7 +43,7 @@ public class UserRepository {
     }
     
     public Multi<User> findByTeam(UUID idTeam) {
-    	LOGGER.info("Find by Team Id: " + idTeam);
+    	LOGGER.info("Find by Team Id:: {0}", idTeam);
     	
         return this.client
                 .preparedQuery("SELECT * FROM users u where u.team_id = $1 ORDER BY id ASC")
@@ -52,7 +52,7 @@ public class UserRepository {
     }
     
     public Uni<UUID> createFromKafka(User user) {
-    	LOGGER.info("Creating a new user");
+    	LOGGER.info("Creating a new user from kafka");
     	
     	return this.client
     		.preparedQuery("INSERT INTO users (id, username, email) VALUES ($1, $2, $3) RETURNING id;")
@@ -61,7 +61,7 @@ public class UserRepository {
     }
     
     public Uni<Boolean> updateTeam(UUID id, User user) {
-    	LOGGER.info("updating a user");
+    	LOGGER.info("updating a user: {0}", id);
     	
     	return this.client
     		.preparedQuery("UPDATE users SET team_id = $1 where id = $2;")
@@ -70,7 +70,7 @@ public class UserRepository {
     }
     
     public Uni<Boolean> update(UUID id, User user) {
-    	LOGGER.info("updating a user");
+    	LOGGER.info("updating user: {0}", id);
     	
     	return this.client
     		.preparedQuery("UPDATE users SET username = $1, email = $2 where id = $3;")
@@ -79,7 +79,7 @@ public class UserRepository {
     }
     
     public Uni<Boolean> delete (UUID id) {
-    	LOGGER.info("Deleting user " + id);
+    	LOGGER.info("Deleting user: {0}", id);
 
     	return this.client
 			.preparedQuery("DELETE FROM users where id = $1;")
@@ -88,7 +88,7 @@ public class UserRepository {
     }
         
    	public User fromUser(Row row) {
-		Team team = Team.of(row.getUUID("user_id"), null);
+		Team team = Team.of(row.getUUID("team_id"), null);
 		return User.of(row.getUUID("id"), row.getString("username"), row.getString("email"), team);
 	}
 }

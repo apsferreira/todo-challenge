@@ -14,6 +14,7 @@ import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.Row;
+import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 
 @ApplicationScoped
@@ -33,7 +34,7 @@ public class VersionRepository {
     }
     
     public Uni<Boolean> delete (UUID id) {
-    	LOGGER.info("Deleting note " + id);
+    	LOGGER.info("Deleting note: {0}", id);
 
     	return this.client
 			.preparedQuery("DELETE FROM notes where id = $1;")
@@ -41,11 +42,20 @@ public class VersionRepository {
 	            .onItem().transform(pgRowSet -> pgRowSet.rowCount() == 1);
     }
     
+    public Uni<Version> findByNewNoteId(UUID id) {
+		LOGGER.info("finding version by new_note_id: {0}", id);
+		
+        return this.client
+        		.preparedQuery("SELECT * FROM versions WHERE new_note_id = $1").execute(Tuple.of(id))
+                .map(RowSet::iterator)
+                .onItem().transform(iterator -> iterator.hasNext() ? fromVersion(iterator.next()) : null);
+    }
+    
     public Multi<Version> listVersionsOfNote(UUID idNote) {
-    	LOGGER.info("Get List of Versions of note: " + idNote);
+    	LOGGER.info("Get List of Versions of note: {0}", idNote);
 
         return this.client
-        		.preparedQuery("SELECT * FROM versions WHERE note_parent_id = $1").execute(Tuple.of(idNote))
+        		.preparedQuery("SELECT * FROM versions WHERE new_note_id = $1").execute(Tuple.of(idNote))
         		.onItem().transformToMulti(set -> Multi.createFrom().iterable(set))
 				.onItem().transform(version -> this.fromVersion(version));
     }

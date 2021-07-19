@@ -60,7 +60,7 @@ public class TodoRepository {
     }
     
     public Uni<UUID> createByTeam(Todo todo) {
-    	LOGGER.info("Creating a new todo by team: " + todo.getTeam().getId());
+    	LOGGER.info("Creating a new todo by team: {0}", todo.getTeam().getId());
     	
     	return this.client
     		.preparedQuery("INSERT INTO todos (description, team_id) VALUES ($1, $2) RETURNING id;")
@@ -68,15 +68,23 @@ public class TodoRepository {
     }
 
     public Uni<UUID> createByUser(Todo todo) {
-    	LOGGER.info("Creating a new todo by user: " + todo.getUser().getId());
+    	LOGGER.info("Creating a new todo by user: {0}", todo.getUser().getId());
     	
     	return this.client
 			.preparedQuery("INSERT INTO todos (description, user_id) VALUES ($1, $2) RETURNING id;")
 			.execute(Tuple.of(todo.getDescription(), todo.getUser().getId())).onItem().transform(pgRowSet -> pgRowSet.iterator().next().getUUID("id"));
     }
     
+    public Uni<UUID> createFromKafka(UUID userId, String userName) {
+    	LOGGER.info("Creating a new todo by user: {0}", userName);
+    	
+    	return this.client
+			.preparedQuery("INSERT INTO todos (description, user_id) VALUES ($1, $2) RETURNING id;")
+			.execute(Tuple.of("TO DO LIST of " + userName, userId)).onItem().transform(pgRowSet -> pgRowSet.iterator().next().getUUID("id"));	
+	}
+    
     public Uni<Boolean> update (UUID id, Todo todo) {
-    	LOGGER.info("Updating todo " + id);
+    	LOGGER.info("Updating todo: {0}", id);
     	
     	return this.client
 			.preparedQuery("update todos set description = $1 where id = $2;")
@@ -85,11 +93,20 @@ public class TodoRepository {
     }
     
     public Uni<Boolean> delete (UUID id) {
-    	LOGGER.info("Deleting todo " + id);
+    	LOGGER.info("Deleting todo: {0}", id);
 
     	return this.client
 			.preparedQuery("DELETE FROM todos where id = $1;")
 			.execute(Tuple.of(id))
+	            .onItem().transform(pgRowSet -> pgRowSet.rowCount() == 1);
+    }
+    
+    public Uni<Boolean> deleteFromKafkaByUserId (UUID userId) {
+    	LOGGER.info("Deleting todo by userId: {0}", userId);
+
+    	return this.client
+			.preparedQuery("DELETE FROM todos where user_id = $1;")
+			.execute(Tuple.of(userId))
 	            .onItem().transform(pgRowSet -> pgRowSet.rowCount() == 1);
     }
 

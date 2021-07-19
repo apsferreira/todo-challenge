@@ -33,13 +33,31 @@ public class TeamRepository {
     }
 	
 	public Uni<Team> findById(UUID id) {
-		LOGGER.info("Find by user Id: " + id);
+		LOGGER.info("Find by user Id: {0}", id);
 		
         return this.client
         		.preparedQuery("SELECT * FROM teams WHERE id = $1").execute(Tuple.of(id))
                 .map(RowSet::iterator)
                 .onItem().transform(iterator -> iterator.hasNext() ? fromTeam(iterator.next()) : null);
     }
+	
+	public Uni<Team> findByNameAndOriginalId(String name, Long originalId) {
+		LOGGER.info("Find by team name: {0} and originalId: {1}", name, originalId);
+		
+        return this.client
+        		.preparedQuery("SELECT * FROM teams WHERE name = $1 and original_id = $2").execute(Tuple.of(name, originalId))
+                .map(RowSet::iterator)
+                .onItem().transform(iterator -> iterator.hasNext() ? fromTeam(iterator.next()) : null);
+    }
+	
+	public Uni<Team> findByOriginalId(long originalId) {
+		 LOGGER.info("Find by and originalId: {0}", originalId);
+		
+        return this.client
+        		.preparedQuery("SELECT * FROM teams WHERE original_id = $1").execute(Tuple.of(originalId))
+                .map(RowSet::iterator)
+                .onItem().transform(iterator -> iterator.hasNext() ? fromTeam(iterator.next()) : null);
+	}
     
     
     public Uni<UUID> createFromKafka(Team team) {
@@ -61,7 +79,7 @@ public class TeamRepository {
     }
     
     public Uni<Boolean> delete (Long id) {
-    	LOGGER.info("Deleting team " + id);
+    	LOGGER.info("Deleting team: {0}", id);
 
     	return this.client
 			.preparedQuery("DELETE FROM teams where original_id = $1;")

@@ -21,8 +21,4 @@ public class Todo extends PanacheEntityBase {
 	
 	@OneToOne(optional = true)
 	public Team team;
-	
-	@OneToOne(optional = true)
-	public User user;
-	
 }

@@ -7,6 +7,7 @@ import java.util.concurrent.CompletionStage;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 
 import org.eclipse.microprofile.reactive.messaging.Acknowledgment;
 import org.eclipse.microprofile.reactive.messaging.Incoming;
@@ -33,49 +34,27 @@ public class KafkaConsumerService {
     
     @Incoming("keycloak-users")
     @Acknowledgment(Acknowledgment.Strategy.MANUAL)
+    @Transactional
     public CompletionStage<Void> onMessageUsers(KafkaRecord<String, String> message) throws IOException {
         return CompletableFuture.runAsync(() -> {                    		
 			try {
 				if (message != null && message.getPayload() != null) {
 					JsonNode data = objectMapper.readValue(message.getPayload(), JsonNode.class);
+					LOGGER.info("receiving data");
 					
 					if (data != null && data.get("op").asText()	.equals("c")) {
-						LOGGER.info("receiving data {} ", data.get("after"));
-						
-						userRepository.persist(User.of(UUID.fromString(data.get("after").get("id").asText()),data.get("after").get("username").asText(), data.get("after").get("email").asText()));
-						
+						userRepository.createFromKafka(User.of(UUID.fromString(data.get("after").get("id").asText()),data.get("after").get("username").asText(), data.get("after").get("email").asText()));
 						LOGGER.info("user created with success");
 					} else if (data != null && data.get("op").asText().equals("u")){
-						LOGGER.info("receiving data {} ", data.get("after"));
+						userRepository.updateFromKafka(UUID.fromString(data.get("after").get("id").asText()), 
+								User.of(UUID.fromString(data.get("after").get("id").asText()),data.get("after").get("username").asText(), 
+										data.get("after").get("email").asText()));						
+						LOGGER.info("user updated with success");
 						
-						if (userRepository.update(userRepository.findByOriginalId(UUID.fromString(data.get("after").get("id").asText())), 
-								User.of(UUID.fromString(data.get("after").get("id").asText()),data.get("after").get("username").asText(), data.get("after").get("email").asText())).isPersistent()){						
-							LOGGER.info("user updated with success");
-						}
 					} else if (data != null && data.get("op").asText().equals("d")){
-						LOGGER.info("receiving data {} ", data.get("before"));
-
-						userRepository.delete(userRepository.findByOriginalId(UUID.fromString(data.get("after").get("id").asText()))); 
-						
+						userRepository.deleteFromKafka(UUID.fromString(data.get("before").get("id").asText())); 						
 						LOGGER.info("user deleted with success");							
 					}					
-				}
-			} catch (JsonProcessingException e) {
-				e.printStackTrace();
-			}
-			message.ack();
-        });
-    }
-    
-    @Incoming("register-teams")
-    @Acknowledgment(Acknowledgment.Strategy.MANUAL)
-    public CompletionStage<Void> onMessageTeams(KafkaRecord<String, String> message) throws IOException {
-    	return CompletableFuture.runAsync(() -> {                    		
-			try {
-				if (message != null && message.getPayload() != null) {
-					JsonNode data = objectMapper.readValue(message.getPayload(), JsonNode.class);
-					
-									
 				}
 			} catch (JsonProcessingException e) {
 				e.printStackTrace();

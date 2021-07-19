@@ -23,7 +23,10 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.Response.Status;
 
 import org.eclipse.microprofile.jwt.JsonWebToken;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.enums.SecuritySchemeType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.security.OAuthFlow;
 import org.eclipse.microprofile.openapi.annotations.security.OAuthFlows;
@@ -43,11 +46,13 @@ import io.quarkus.cache.CacheKey;
 import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 @Path("/notes")
-@Tag(name = "Notes")	
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Tag(name = "Notes")	
 @SecurityScheme(securitySchemeName = "todo-oauth", type = SecuritySchemeType.OAUTH2, flows = @OAuthFlows(password = @OAuthFlow(tokenUrl = "http://localhost:8180/auth/realms/todo/protocol/openid-connect/token")))
 public class NoteResource {
 	
@@ -61,25 +66,33 @@ public class NoteResource {
 	NoteRepository noteRepository;
 	
 	@Inject
-	private VersionRepository versionRepository;
+	VersionRepository versionRepository;
 	
 	@Inject
 	JsonWebToken jwt;
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(NoteResource.class);
 
 	@GET
-	@APIResponse(responseCode = "200", description = "Note list returned successfully")
+	@APIResponse(responseCode = "200", description = "Note list returned successfully", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = NoteDTO.class)))
+	@APIResponse(responseCode = "401", description = "Not authorized")
+	@APIResponse(responseCode = "403", description = "Forbidden")
 	@RolesAllowed("ROLE_ADMIN")
 	public Multi<NoteDTO> getAll(@QueryParam List<String> filter, @QueryParam String sort) {		
+		LOGGER.info("Todo -> NoteResource -> getAll route was requested");
+		
 		return noteRepository.listAll(filter, sort).map(note -> noteMapper.convertToNoteDTO(note));
  	}
 	
 	@GET
 	@Path("{idNote}")
-	@APIResponse(responseCode = "200", description = "Note returned successfully")
+	@APIResponse(responseCode = "200", description = "Note returned successfully", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = NoteDTO.class)))
 	@APIResponse(responseCode = "404", description = "Note not found")
 	@RolesAllowed("ROLE_USER")
 	@CacheResult(cacheName = "getNote-todo")
-	public Uni<Response> getNote(@CacheKey @PathParam("idNote") UUID idNote) {				
+	public Uni<Response> getNote(@CacheKey @PathParam("idNote") UUID idNote) {	
+		LOGGER.info("Todo -> NoteResource -> getNote route was requested");
+		
 		return noteRepository.findById(idNote)
 				.map(note -> note != null ? Response.ok(noteMapper.convertToNoteDTO(note)) : Response.status(Status.NOT_FOUND))
 				.onItem().transform(ResponseBuilder::build);
@@ -87,12 +100,13 @@ public class NoteResource {
 	
 	@GET
 	@Path("{idNote}/versions")
-	@APIResponse(responseCode = "200", description = "Note returned successfully")
+	@APIResponse(responseCode = "200", description = "Note returned successfully", content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = NoteDTO.class)))
 	@APIResponse(responseCode = "404", description = "Note not found")
 	@RolesAllowed("ROLE_USER")	
-	public Multi<Response> getVersionList(@CacheKey @PathParam("idNote") UUID idNote) {				
-		return versionRepository.listVersionsOfNote(idNote)
-				.onItem().transform(version -> noteRepository.findById(version.getNewNote().getId()).await().indefinitely())
+	public Uni<Response> getVersionList(@CacheKey @PathParam("idNote") UUID idNote) {			
+		LOGGER.info("Todo -> NoteResource -> getVersionList route was requested");
+		
+		return noteService.listVersionsOfNote(idNote)
 				.map(note -> note != null ? Response.ok(noteMapper.convertToNoteDTO(note)) : Response.status(Status.NOT_FOUND))
 				.onItem().transform(ResponseBuilder::build);
 	}
@@ -103,6 +117,8 @@ public class NoteResource {
 	@RolesAllowed("ROLE_USER")
 	@Transactional
 	public Uni<Response> create(@Valid CreateNoteDTO createNoteDTO) {
+		LOGGER.info("Todo -> NoteResource -> create route was requested");
+		
 		return noteRepository.create(noteMapper.convertToNote(createNoteDTO), jwt.getSubject())
 				.map(newId -> newId != null ? Response.created(URI.create("/notes/" + newId)) : Response.status(400))
 				.onItem().transform(ResponseBuilder::build);
@@ -117,6 +133,8 @@ public class NoteResource {
 	@RolesAllowed("ROLE_USER")
 	@Transactional
 	public Uni<Response> update(@PathParam("idNote") UUID idNote, UpdateNoteDTO updateNoteDTO) {
+		LOGGER.info("Todo -> NoteResource -> update route was requested");
+		
 		if(!noteService.validateUser(jwt.getSubject(), idNote)) {
 			return Uni.createFrom().item(() -> Response.status(403))
 					.onItem().transform(ResponseBuilder::build);
@@ -135,6 +153,8 @@ public class NoteResource {
 	@RolesAllowed("ROLE_USER")
 	@Transactional
 	public Uni<Response> delete(@PathParam("idNote") UUID idNote) {
+		LOGGER.info("Todo -> NoteResource -> delete route was requested");
+		
 		if(!noteService.validateUser(jwt.getSubject(), idNote)) {
 			return Uni.createFrom().item(() -> Response.status(403))
 					.onItem().transform(ResponseBuilder::build);
@@ -175,6 +195,8 @@ public class NoteResource {
 	@RolesAllowed("ROLE_USER")
 	@Transactional
 	public Uni<Response> doneNote(@PathParam("idNote") UUID idNote) {
+		LOGGER.info("Todo -> NoteResource -> doneNote route was requested");
+		
 		if(!noteService.validateUser(jwt.getSubject(), idNote)) {
 			return Uni.createFrom().item(() -> Response.status(403))
 					.onItem().transform(ResponseBuilder::build);

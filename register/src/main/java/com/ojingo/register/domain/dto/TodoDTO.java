@@ -6,6 +6,4 @@ public class TodoDTO {
 	public String description;
 	
 	public TeamDTO team;
-	
-	public UserDTO user;
 }

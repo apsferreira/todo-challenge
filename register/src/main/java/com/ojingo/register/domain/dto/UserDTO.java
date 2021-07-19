@@ -8,6 +8,4 @@ public class UserDTO {
 	public String username;
 	
 	public TeamDTO team;
-	
-	public TodoDTO todo;
 }

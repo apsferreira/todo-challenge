@@ -8,10 +8,6 @@ import com.ojingo.register.domain.entities.Todo;
 public interface TodoMapper {
 	Todo convertToTodo(TodoDTO todoDTO);
 	
-	Todo convertToTodo(CreateTodoDTO createTodoDTO);
-	
-	Todo convertToTodo(UpdateTodoDTO updateTodoDTO);
-
 	Todo convertToTodo(CreateTodoTeamDTO createTodoDTO);
 	
 	Todo convertToTodo(UpdateTodoTeamDTO updateTodoTeamDTO);

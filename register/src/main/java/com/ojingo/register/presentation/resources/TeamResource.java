@@ -63,25 +63,24 @@ import io.vertx.core.logging.LoggerFactory;
 public class TeamResource {
 
 	@Inject
-	TeamMapper teamMapper;
+	private TeamMapper teamMapper;
 
 	@Inject
-	UserMapper userMapper;
+	private UserMapper userMapper;
 
 	@Inject
-	TodoMapper todoMapper;
+	private TodoMapper todoMapper;
 	
 	@Inject 
-	TeamRepository teamRepository;
+	private TeamRepository teamRepository;
 
 	@Inject 
-	UserRepository userRepository;
+	private UserRepository userRepository;
 	
 	@Inject
-	TodoRepository todoRepository;
+	private TodoRepository todoRepository;
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(TeamResource.class);
-
 
 	@GET
 	@APIResponse(responseCode = "200", description = "Team list returned successfully")
@@ -127,7 +126,7 @@ public class TeamResource {
 	@APIResponse(responseCode = "403", description = "Forbidden")
 	@APIResponse(responseCode = "404", description = "Team not found")
 	@RolesAllowed("ROLE_ADMIN")
-	public Response getUsersByTeam(@CacheKey @PathParam("idTeam") Long idTeam) {
+	public Response getUsersByTeam(@PathParam("idTeam") Long idTeam) {
 		Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
 		
 		LOGGER.info("register -> TeamResource -> getUsersByTeam route was requested");
@@ -152,7 +151,7 @@ public class TeamResource {
 	@APIResponse(responseCode = "403", description = "Forbidden")
 	@APIResponse(responseCode = "404", description = "Team not found")
 	@RolesAllowed("ROLE_USER")
-	public Response getTodosByTeam(@CacheKey @PathParam("idTeam") Long idTeam) {
+	public Response getTodosByTeam(@PathParam("idTeam") Long idTeam) {
 		Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
 		
 		LOGGER.info("register -> TeamResource -> getTodosByTeam route was requested");
@@ -180,6 +179,8 @@ public class TeamResource {
 	@CacheResult(cacheName = "getTodoByTeam-register")
 	public Response getTodoByTeam(@CacheKey @PathParam("idTeam") Long idTeam, @CacheKey @PathParam("idTodo") Long idTodo) {
 		Optional<Todo> todoOptional = todoRepository.findByIdOptional(idTodo);
+		
+		LOGGER.info("register -> TeamResource -> getTodoByTeam route was requested");
 
 		if (todoOptional.isEmpty()) {
 			throw new NotFoundException();
@@ -204,6 +205,8 @@ public class TeamResource {
 	@CacheResult(cacheName = "getUserByTeam-register")
 	public Response getUserByTeam(@CacheKey @PathParam("idTeam") Long idTeam, @CacheKey @PathParam("idUser") Long idUser) {
 		Optional<User> userOptional = userRepository.findByIdOptional(idUser);
+		
+		LOGGER.info("register -> TeamResource -> getUserByTeam route was requested");
 
 		if (userOptional.isEmpty()) {
 			throw new NotFoundException();
@@ -226,6 +229,8 @@ public class TeamResource {
 	@Transactional
 	public Response create(@Valid CreateTeamDTO createTeamDTO) {
 		Team team = teamMapper.convertToTeam(createTeamDTO);
+		
+		LOGGER.info("register -> TeamResource -> create route was requested");
 
 		if (teamRepository.create(team).isPersistent()) {
 			return Response.created(URI.create("/teams/" + team.id.toString())).build();
@@ -248,6 +253,8 @@ public class TeamResource {
 	public Response createTodoByTeam(@PathParam("idTeam") Long idTeam, @Valid CreateTodoTeamDTO createTodoDTO)
 			throws Exception {
 		Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
+		
+		LOGGER.info("register -> TeamResource -> createTodoByTeam route was requested");
 
 		if (teamOptional.isEmpty()) {
 			throw new NotFoundException();
@@ -276,6 +283,8 @@ public class TeamResource {
 	public Response update(@PathParam("idTeam") Long idTeam, UpdateTeamDTO updateTeamDTO) {
 		if (idTeam != null && updateTeamDTO != null) {
 			Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
+			
+			LOGGER.info("register -> TeamResource -> update route was requested");
 
 			if (teamOptional.isEmpty()) {
 				throw new NotFoundException();
@@ -306,6 +315,8 @@ public class TeamResource {
 	public Response updateTodoByTeam(@PathParam("idTeam") Long idTeam, @PathParam("idTodo") Long idTodo,
 			UpdateTodoTeamDTO updateTodoTeamDTO) throws Exception {
 		Optional<Todo> todoOptional = todoRepository.findByIdOptional(idTodo);
+		
+		LOGGER.info("register -> TeamResource -> updateTodoByTeam route was requested");
 
 		if (todoOptional.isEmpty() || !todoOptional.get().team.id.equals(idTeam)) {
 			throw new NotFoundException();
@@ -332,6 +343,8 @@ public class TeamResource {
 	@Transactional
 	public Response updateUserByTeam(@PathParam("idTeam") Long idTeam, @PathParam("idUser") Long idUser) throws Exception {
 		Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
+		
+		LOGGER.info("register -> TeamResource -> updateUserByTeam route was requested");
 
 		if (teamOptional.isEmpty()) {
 			throw new NotFoundException();
@@ -363,6 +376,8 @@ public class TeamResource {
 	@Transactional
 	public Response delete(@PathParam("idTeam") Long idTeam) {
 		Optional<Team> teamOptional = teamRepository.findByIdOptional(idTeam);
+		
+		LOGGER.info("register -> TeamResource -> delete route was requested");
 
 		if (teamOptional.isEmpty()) {
 			throw new NotFoundException();
@@ -385,6 +400,8 @@ public class TeamResource {
 	@Transactional
 	public Response deleteTodoByTeam(@PathParam("idTeam") Long idTeam, @PathParam("idTodo") Long idTodo) {
 		Optional<Todo> todoOptional = todoRepository.findByIdOptional(idTodo);
+		
+		LOGGER.info("register -> TeamResource -> deleteTodoByTeam route was requested");
 
 		if (todoOptional.isEmpty()) {
 			throw new NotFoundException();

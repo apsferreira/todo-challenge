@@ -96,7 +96,7 @@ public class Note {
 		this.todo = todo;
 	}
 	
-	public static Note of(UUID id, String description, boolean done, boolean favorite, OffsetDateTime createdAt, User user, Todo todo) {
+	public static Note of(UUID id, String description, boolean done, boolean favorite, OffsetDateTime createdAt, User user, Todo todo, String subjectJWT) {
 		Note note = new Note();
 		note.id = id;
 		note.description = description;
@@ -105,6 +105,7 @@ public class Note {
 		note.createdAt = createdAt;
 		note.user = user;
 		note.todo = todo;
+		note.subjectJWT = subjectJWT;
 		
 		return note;
 	}

@@ -16,7 +16,7 @@ CREATE TABLE users (
 	CONSTRAINT user_pkey PRIMARY KEY (id)
 );
 
-ALTER TABLE users ADD CONSTRAINT user_team FOREIGN KEY (team_id) REFERENCES teams(id);
+--ALTER TABLE users ADD CONSTRAINT user_team FOREIGN KEY (team_id) REFERENCES teams(id);
 
 CREATE TABLE todos (
 	id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -27,8 +27,8 @@ CREATE TABLE todos (
 	CONSTRAINT todo_pkey PRIMARY KEY (id)
 );
 
-ALTER TABLE todos ADD CONSTRAINT todo_user FOREIGN KEY (user_id) REFERENCES users(id);
-ALTER TABLE todos ADD CONSTRAINT todo_team FOREIGN KEY (team_id) REFERENCES teams(id);
+--ALTER TABLE todos ADD CONSTRAINT todo_user FOREIGN KEY (user_id) REFERENCES users(id);
+--ALTER TABLE todos ADD CONSTRAINT todo_team FOREIGN KEY (team_id) REFERENCES teams(id);
 
 CREATE TABLE notes (
 	id uuid NOT NULL DEFAULT uuid_generate_v4(),
@@ -37,13 +37,13 @@ CREATE TABLE notes (
 	description varchar(500),
 	done BOOLEAN default FALSE,
 	favorite BOOLEAN default FALSE,	
-	subject_jwt varchar(20) DEFAULT NULL,
+	subject_jwt varchar(100) DEFAULT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP, 
 	CONSTRAINT note_pkey PRIMARY KEY (id)
 );
 
-ALTER TABLE notes ADD CONSTRAINT note_todo FOREIGN KEY (todo_id) REFERENCES todos(id);
-ALTER TABLE notes ADD CONSTRAINT note_user FOREIGN KEY (user_id) REFERENCES users(id);
+--ALTER TABLE notes ADD CONSTRAINT note_todo FOREIGN KEY (todo_id) REFERENCES todos(id);
+--ALTER TABLE notes ADD CONSTRAINT note_user FOREIGN KEY (user_id) REFERENCES users(id);
 
 CREATE TABLE versions (
 	id uuid NOT NULL DEFAULT uuid_generate_v4(),

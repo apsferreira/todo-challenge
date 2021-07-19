@@ -37,6 +37,8 @@ import io.quarkus.cache.CacheKey;
 import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 @Path("/todos")
 @Tag(name = "Todos")	
@@ -57,12 +59,15 @@ public class TodoResource {
 	@Inject
 	private NoteRepository noteRepository;
 	
+	private static final Logger LOGGER = LoggerFactory.getLogger(TodoResource.class);
 	
 	@GET
 	@APIResponse(responseCode = "200", description = "Todo lists returned successfully", 
 		content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TodoDTO.class)))
 		@RolesAllowed("ROLE_ADMIN")	
 	public Multi<TodoDTO> getAll() {
+		LOGGER.info("Todo -> TodoResource -> getAll route was requested");
+		
 		return todoRepository.listAll().map(todo -> todoMapper.convertToTodoDTO(todo));
 	}
 	
@@ -72,7 +77,9 @@ public class TodoResource {
 	@APIResponse(responseCode = "404", description = "Todo not found")
 	@RolesAllowed("ROLE_USER")
 	@CacheResult(cacheName = "getNote-todo")
-	public Uni<Response> getTodo(@CacheKey @PathParam("idTodo") UUID idTodo) {				
+	public Uni<Response> getTodo(@CacheKey @PathParam("idTodo") UUID idTodo) {
+		LOGGER.info("Todo -> TodoResource -> getTodo route was requested");
+		
 		return todoRepository.findById(idTodo)
 				.map(todo -> todo != null ? Response.ok(todo) : Response.status(Status.NOT_FOUND))
 				.onItem().transform(ResponseBuilder::build);
@@ -85,7 +92,9 @@ public class TodoResource {
 	@Tag(name = "Todos")
 	@Tag(name = "Notes")
 	@RolesAllowed("ROLE_USER")
-	public Multi<NoteDTO> getNotesByTodo(@CacheKey @PathParam("idTodo") UUID idTodo, @QueryParam List<String> filter, @QueryParam String sort) {				
+	public Multi<NoteDTO> getNotesByTodo(@CacheKey @PathParam("idTodo") UUID idTodo, @QueryParam List<String> filter, @QueryParam String sort) {
+		LOGGER.info("Todo -> TodoResource -> getNotesByTodo route was requested");
+		
 		return noteRepository.listByTodo(idTodo, filter, sort)
 				.map(note -> noteMapper.convertToNoteDTO(note));
 	}	

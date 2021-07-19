@@ -38,6 +38,8 @@ import io.quarkus.cache.CacheKey;
 import io.quarkus.cache.CacheResult;
 import io.smallrye.mutiny.Multi;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
 
 @Path("/users")
 @Tag(name = "Users")	
@@ -58,12 +60,16 @@ public class UserResource {
 	@Inject
 	private NoteRepository noteRepository;
 	
+	private static final Logger LOGGER = LoggerFactory.getLogger(UserResource.class);
+	
 	
 	@GET
 	@APIResponse(responseCode = "200", description = "Users returned successfully", 
 		content = @Content(schema = @Schema(type = SchemaType.ARRAY, implementation = TodoDTO.class)))
 	@RolesAllowed("ROLE_ADMIN")
 	public Multi<UserDTO> getAll() {
+		LOGGER.info("Todo -> UserResource -> getAll route was requested");
+
 		return userRepository.listAll().map(user -> userMapper.convertToUserDTO(user));
 	}
 	
@@ -73,7 +79,9 @@ public class UserResource {
 	@APIResponse(responseCode = "404", description = "User not found")
 	@RolesAllowed({"ROLE_USER"})
 	@CacheResult(cacheName = "getUser-todo")
-	public Uni<Response> getUser(@CacheKey @PathParam("idUser") UUID idUser) {				
+	public Uni<Response> getUser(@CacheKey @PathParam("idUser") UUID idUser) {	
+		LOGGER.info("Todo -> UserResource -> getAll route was requested");
+
 		return userRepository.findById(idUser)
 				.map(user -> user != null ? Response.ok(user) : Response.status(Status.NOT_FOUND))
 				.onItem().transform(ResponseBuilder::build);
@@ -86,7 +94,9 @@ public class UserResource {
 	@Tag(name = "Users")
 	@Tag(name = "Notes")
 	@RolesAllowed({"ROLE_USER"})
-	public Multi<NoteDTO> getNotesByUser(@CacheKey @PathParam("idUser") UUID idUser, @QueryParam List<String> filter, @QueryParam String sort) {				
+	public Multi<NoteDTO> getNotesByUser(@CacheKey @PathParam("idUser") UUID idUser, @QueryParam List<String> filter, @QueryParam String sort) {
+		LOGGER.info("Todo -> UserResource -> getNotesByUser route was requested");
+		
 		return noteRepository.listByUser(idUser, filter, sort)
 				.map(note -> noteMapper.convertToNoteDTO(note));
 	}

@@ -8,8 +8,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToOne;
-import javax.persistence.Table; 
-import javax.persistence.Transient;
+import javax.persistence.Table;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 
@@ -30,9 +29,6 @@ public class User extends PanacheEntityBase {
 	public String username;
 
 	public String email;
-
-	@Transient
-	public Todo todo;
 
 	public static User of(UUID originalId, String username, String email) {
 		User user = new User();

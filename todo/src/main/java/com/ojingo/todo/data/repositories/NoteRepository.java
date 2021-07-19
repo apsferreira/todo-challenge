@@ -39,7 +39,8 @@ public class NoteRepository {
 														+ "	n1.todo_id,\n"
 														+ "	n1.user_id,\n"
 														+ " u1.username,\n"
-														+ "	n1.created_at\n"
+														+ "	n1.created_at,\n"
+														+ "	n1.subject_jwt\n"
 														+ "from \n"
 														+ "	notes n1\n"
 														+ " inner join\n"
@@ -69,7 +70,8 @@ public class NoteRepository {
 													+ "	n1.todo_id,\n"
 													+ "	n1.user_id,\n"
 													+ " u1.username,\n"
-													+ "	n1.created_at\n"
+													+ "	n1.created_at,\n"
+													+ "	n1.subject_jwt\n"
 													+ "from\n"
 													+ "	notes n1\n"
 													+ " inner join\n"
@@ -142,7 +144,7 @@ public class NoteRepository {
 		LOGGER.info("Listing all notes by filters and sort");
 		
 		return this.client
-				.query(NOT_VERSIONED_NOTES 
+				.query(NOT_VERSIONED_NOTES  
 						+ this.filter 
 						+ " union\n " 
 						+ VERSIONED_NOTES 
@@ -153,7 +155,7 @@ public class NoteRepository {
     }
 
 	public Uni<Note> findById(UUID id) {
-		LOGGER.info("finding note by id: " + id);
+		LOGGER.info("finding note by id: {0}", id);
 		
         return this.client
         		.preparedQuery("SELECT * FROM notes WHERE id = $1").execute(Tuple.of(id))
@@ -164,7 +166,7 @@ public class NoteRepository {
 	public Multi<Note> listByUser(UUID idUser, List<String> filter, String sort) {
 		this.configureFilter(filter, sort);
 		
-		LOGGER.info("Listing notes by user: " + idUser);
+		LOGGER.info("Listing notes by user: {0}", idUser);
 		
 		return this.client
 				.query(NOT_VERSIONED_NOTES
@@ -182,7 +184,7 @@ public class NoteRepository {
     public Multi<Note> listByTodo(UUID idTodo, List<String> filter, String sort) {
 		this.configureFilter(filter, sort);
 		
-		LOGGER.info("Listing notes by todo: " + idTodo);
+		LOGGER.info("Listing notes by todo:: {0}", idTodo);
 		
         return this.client
         		.query(NOT_VERSIONED_NOTES
@@ -207,7 +209,7 @@ public class NoteRepository {
     }
     
     public Uni<Boolean> updateDone (UUID id, Note note) {
-    	LOGGER.info("Updating Done of note " + id);
+    	LOGGER.info("Updating Done of note: {0}", id);
     	
     	return this.client
 			.preparedQuery("update notes set done = $1 where id = $2;")
@@ -216,7 +218,7 @@ public class NoteRepository {
     }
     
     public Uni<Boolean> updateFavorite (UUID id, Note note) {
-    	LOGGER.info("Updating Favorite of note" + id);
+    	LOGGER.info("Updating Favorite of note: {0}", id);
     	
     	return this.client
 			.preparedQuery("update notes set favorite = $1 where id = $2;")
@@ -225,7 +227,7 @@ public class NoteRepository {
     }
     
     public Uni<Boolean> delete (UUID id) {
-    	LOGGER.info("Deleting note " + id);
+    	LOGGER.info("Deleting note: {0}", id);
 
     	return this.client
 			.preparedQuery("DELETE FROM notes where id = $1;")
@@ -236,6 +238,6 @@ public class NoteRepository {
 	public Note fromNote(Row row) {
 		User user = User.of(row.getUUID("user_id"));			
 		Todo todo = Todo.of(row.getUUID("todo_id"));			
-		return Note.of(row.getUUID("id"), row.getString("description"), row.getBoolean("done"), row.getBoolean("favorite"), row.getOffsetDateTime("created_at"), user, todo);
+		return Note.of(row.getUUID("id"), row.getString("description"), row.getBoolean("done"), row.getBoolean("favorite"), row.getOffsetDateTime("created_at"), user, todo, row.getString("subject_jwt"));
 	}
 }
